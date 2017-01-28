@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<!-- Histon H1 fitting-inference
+Carlos Contrerascarlos.contreras@ualberta.ca
+--><html>
+  <head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type">
+    <meta name="viewport" content="width=device-width">
+    <title>Histone H1 GUI</title>
+    <script src="https://sagecell.sagemath.org/static/jquery.min.js"></script>
+    <script src="https://sagecell.sagemath.org/static/embedded_sagecell.js"></script>
+    <script>$(function () {
+    // Make the div with id 'mycell' a Sage cell
+    sagecell.makeSagecell({inputLocation:  '#mycell',
+                           template:       sagecell.templates.minimal,
+                           evalButtonText: 'Click to Run/Restart'});
+    // Make *any* div with class 'compute' a Sage cell
+    sagecell.makeSagecell({inputLocation: 'div.compute',
+                           template:       sagecell.templates.minimal,
+                           evalButtonText: 'Evaluate'});
+    });
+    </script>
+  </head>
+  <body style="  width: 1100px; margin-left: auto; margin-right:auto">
+    <h1 style="text-align: center;"> <br>
+      Histone H1 fitting-inference GUI<br>
+    </h1>
+    <div id="mycell">
+      <script type="text/x-sage">
+# Data
+CSVdata = r"""t     ,R
+1.1   ,0.0977601998 
+3.1   ,0.174783737  
+5.1   ,0.2349572581 
+7.1   ,0.2845963262 
+12.1  ,0.3846295144 
+17.1  ,0.4565562661 
+22.1  ,0.5135314213 
+27.1  ,0.5571324962 
+32.1  ,0.5952466637 
+37.1  ,0.6271657734 
+42.1  ,0.6541027955 
+47.1  ,0.6790957059 
+52.1  ,0.7026772855 
+57.1  ,0.7207867957 
+62.1  ,0.7378093042 
+67.1  ,0.7527797418 
+72.1  ,0.7667195217 
+77.1  ,0.7826460059 
+82.1  ,0.7926127903 
+87.1  ,0.8036890665 
+92.1  ,0.8126971193 
+97.1  ,0.8200648977 
+102.1 ,0.8299734111 
+107.1 ,0.8374219716 
+115.1 ,0.8478726383 
+123.1 ,0.8583356327 
+131.1 ,0.8682122633 
+139.1 ,0.8766409527 
+147.1 ,0.8834150677 
+155.1 ,0.8891601355 
+163.1 ,0.8962832942 
+171.1 ,0.9022124512 
+179.1 ,0.9077612542 
+187.1 ,0.914217411  
+195.1 ,0.9207008732 
+203.1 ,0.9224623019 
+211.1 ,0.92808996   
+219.1 ,0.9294081919 
+227.1 ,0.9354150696 
+237.1 ,0.9397991118 
+247.1 ,0.9428710763 
+257.1 ,0.9458128153 
+267.1 ,0.9484635021 
+277.1 ,0.9541724157 
+287.1 ,0.9556748509 
+297.1 ,0.9591829091 
+307.1 ,0.9631354145 
+317.1 ,0.9646526788 
+327.1 ,0.9664148798 
+337.1 ,0.9666498127 
+347.1 ,0.9697618561 
+357.1 ,0.9724616419 
+367.1 ,0.973778977  
+377.1 ,0.9750848225 
+387.1 ,0.9792881657 
+397.1 ,0.9793739011 
+407.1 ,0.979256188  
+417.1 ,0.979441914  
+427.1 ,0.9797923127 
+"""
+
+    
+
+# Functions 
+# All user-defined functions are here
+
+from numpy import sin, cos, exp, iscomplex, pi, sqrt, roots
+
+def RecoFunc2Pop( t, par, theta ):
+
+    r1 = theta[0]
+    twoh = theta[1]
+    N = theta[2]
+
+    L = twoh / ( 1 - r1 ) 
+    c = L / 2
+    h = twoh / 2
+
+    D = par[0]
+    kappa_b = par[1]
+    kappa_u = par[2]
+
+    kappaub = kappa_b + kappa_u
+
+    s = 0
+
+    for n in range( 1, N ):
+        DnpiL = D * ( n * float(pi) / L ) ** 2
+        S = ( sin( n * float(pi) * ( c - h ) / L ) - sin( n * float( pi ) * ( c + h ) / L ) ) / ( n * float( pi ) )
+        Q = sqrt( ( kappaub + DnpiL ) ** 2 - 4 * kappa_u * DnpiL )
+        r1 = - ( kappaub + DnpiL - Q ) / 2
+        r2 = - ( kappaub + DnpiL + Q ) / 2
+        F1 = ( r1 + kappaub ) / Q
+        F2 = - ( r2 + kappaub ) / Q 
+        B1 = kappaub + r1 + DnpiL
+        B2 = kappaub + r2 + DnpiL
+        
+        s += ( B1 * F1 * exp( r1 * t ) + B2 * F2 * exp( r2 * t ) ) * S ** 2
+    return 1 - ( L ** 2 ) / ( h * ( L - 2 * h ) * ( kappaub ) ) * s  
+
+####################################################################################################
+
+def RecoFunc3Pop( t, par, theta ):
+    
+    r1 = theta[0]
+    twoh = theta[1]
+    N = theta[2]
+
+    L = twoh / ( 1 - r1 ) 
+    c = L / 2
+    h = twoh / 2
+
+    D = par[0]
+    kappa_b = par[1]
+    kappa_u = par[2]
+    gamma_b = par[3]
+    gamma_u = par[4]
+    eta_b = par[5]
+    eta_u = par[6]
+
+    PI_u = kappa_u * eta_b + kappa_u * gamma_u + eta_u * gamma_u 
+    PI_w = gamma_b * kappa_u + gamma_b * eta_u + kappa_b * eta_u 
+    PI_v = eta_b * gamma_b + eta_b * kappa_b + gamma_u * kappa_b 
+    PI_t = PI_u + PI_w + PI_v 
+
+    Sigma_u = kappa_u + gamma_u + eta_b + eta_u 
+    Sigma_t = kappa_b + kappa_u + gamma_b + gamma_u + eta_b + eta_u 
+    
+    rho = lambda ( s ): s ** 2 + Sigma_t * s + PI_t 
+
+    F = 1
+
+    for n in range( 1, N ):
+
+         DnpiL = D * ( n * float( pi ) / L ) ** 2
+         S = ( sin( n * float( pi ) * ( c - h ) / L ) - sin( n * float( pi ) * ( c + h ) / L ) ) / ( n * float( pi ) )
+         z = Roots3deg( PI_u , PI_t , Sigma_u , Sigma_t , DnpiL ) #create this function
+         r = map( lambda x: ( S * L ) ** 2 * rho( x ) / ( PI_t * ( L - 2 * h ) * h ), z )
+         A = CoefLaplace( z , r )
+
+         F -= ( ( PI_t + Sigma_u * DnpiL ) * LaplaceInv( t , z , A ) + ( Sigma_t + DnpiL ) * LaplaceInvD1( t , z , A ) + LaplaceInvD2( t , z , A) )
+     
+    return F
+
+####################################################################################################
+
+def LaplaceInv( t , z , A ):
+
+    if iscomplex(z[0]):
+        s = z[0].real
+        w = z[0].imag
+        a = abs( A[0] )
+        c = arg( A[0] )
+        L = 2 * a * exp( s * t ) * cos( w * t + c ) + A[2] * exp( z[2] * t )
+    else:
+        L = A[0] * exp( z[0] * t ) + A[1] * exp( z[1] * t ) + A[2] * exp( z[2] * t )
+    return L
+
+####################################################################################################
+
+def LaplaceInvD1( t , z , A ):
+
+    if iscomplex(z[0]):
+        s = z[0].real
+        w = z[0].imag
+        a = abs( A[0] )
+        c = arg( A[0] )
+        L = 2 * a * exp( s * t ) * ( s * cos( w * t + c ) - w * sin( w * t + c ) ) + z[2] * A[2] * exp( z[2] * t )
+    else:
+        L = z[0] * A[0] * exp( z[0] * t ) + z[1] * A[1] * exp( z[1] * t ) + z[2] * A[2] * exp( z[2] * t )
+    return L
+
+####################################################################################################
+
+def LaplaceInvD2( t , z , A ):
+
+    if iscomplex(z[0]):
+        s = z[0].real
+        w = z[0].imag
+        a = abs( A[0] )
+        c = arg( A[0] )
+        L = 2 * a * exp( s * t ) * ( ( s ** 2 - w ** 2 ) * cos( w * t + c ) - 2 * s * w * sin( w * t + c ) ) + z[2] ** 2 * A[2] * exp( z[2] * t )
+    else:
+        L = z[0] ** 2 * A[0] * exp( z[0] * t ) + z[1] ** 2 * A[1] * exp( z[1] * t ) + z[2] ** 2 * A[2] * exp( z[2] * t )
+    return L
+
+####################################################################################################
+
+def CoefLaplace( z , r ):
+
+    return [r[0] / ( ( z[0] - z[1] ) * ( z[0] - z[2] ) ),
+            r[1] / ( ( z[1] - z[0] ) * ( z[1] - z[2] ) ), 
+            r[2] / ( ( z[2] - z[0] ) * ( z[2] - z[1] ) )]
+
+####################################################################################################
+
+def Roots3deg( PI_u , PI_t , Sigma_u , Sigma_t , DnpiL ):
+
+    z = roots( [ 1, Sigma_t + DnpiL, PI_t + Sigma_u * DnpiL, PI_u * DnpiL ] )
+    #if z[2].imag > 1e-14:
+        #temp = z[0]
+        #z[0] = z[2]
+        #z[2] = temp
+    #else:
+        #z = z.real
+    z = z.real
+    return z
+
+def RCode_Funcs():
+    r_code = r"""
+        ###########################################################################################
+        AICweights <- function(AIC){
+            N <- length(AIC)
+            Delta <- 
+            p <- exp(-(AIC - min(AIC)) / 2)
+            p / sum(p)
+        }
+
+        ###########################################################################################
+        InitFitFRAPData <- function(model, data){
+            fit <- list()
+            class(fit) <- "FRAPFit"
+            fit$model <- model
+            fit$data <- data
+            fit$N <- 100
+            if (fit$model == "M0D"){
+                fit$index <- c(1, 2, 3)
+            } else if (fit$model == "M0"){
+                fit$index <- c(2, 3)
+            } else if (fit$model == "M1"){
+                fit$index <- c(2, 3, 4, 5, 6, 7)
+            } else if (fit$model == "M2"){
+                fit$index <- c(3, 4, 5, 6, 7)
+            } else if (fit$model == "M3"){
+                fit$index <- c(2, 4, 5, 6, 7)
+            } else if (fit$model == "M4"){
+                fit$index <- c(2, 3, 4, 5, 7)
+            } else if (fit$model == "M5"){
+                fit$index <- c(2, 3, 4, 5, 6)
+            } else if (fit$model == "M6"){
+                fit$index <- c(4, 5, 6, 7)
+            } else if (fit$model == "M7"){
+                fit$index <- c(2, 3, 4, 5)
+            } else if (fit$model == "M8"){
+                fit$index <- c(2, 4, 5, 7)
+            } else if (fit$model == "M9"){
+                fit$index <- c(3, 4, 5, 6)
+            }
+            if (fit$model == "M0D" || fit$model == "M0"){
+                fit$par <- rep(0, 3)
+                names(fit$par) <- c("D", "kappa_b", "kappa_u")
+                fit$par0 <- fit$par
+            } else {
+                fit$par <- rep(0, 7)
+                names(fit$par) <- c("D", "kappa_b", "kappa_u", "gamma_b", "gamma_u", "eta_b",
+                                  "eta_u")
+                fit$par0 <- fit$par
+            }
+            fit
+        }
+
+        ###########################################################################################
+        AIC.FRAPFit <- function(fit){
+            N <- length(fit$F)
+            K <- length(fit$index)
+            if (N < 70){
+                RSS <- sum(fit$residuals^2)
+                AIC <- N * log(RSS / N) + 2 * K * N / (N - K - 1)
+            } else {
+                AIC <- N * log(RSS / N) + 2 * K
+            }
+            AIC
+        }
+
+        ###########################################################################################
+        FRAPInference <- function(fit){
+            par <- fit$par
+            if (fit$model == "M0D" || fit$model == "M0"){
+                kappa_b <- par[2]
+                kappa_u <- par[3]
+                kappaub = kappa_b + kappa_u
+                fit$prop <- c(kappa_u, kappa_b)/kappaub * 100
+                names(fit$prop) <- c("P_u", "P_v")
+                bioIndex <- c(2, 3)
+            } else {
+                kappa_b <- par[ 2 ] 
+                kappa_u <- par[ 3 ] 
+                gamma_b <- par[ 4 ] 
+                gamma_u <- par[ 5 ] 
+                eta_b <- par[ 6 ] 
+                eta_u <- par[ 7 ]  
+                
+                PI_u <- kappa_u * eta_b + kappa_u * gamma_u + eta_u * gamma_u 
+                PI_w <- gamma_b * kappa_u + gamma_b * eta_u + kappa_b * eta_u 
+                PI_v <- eta_b * gamma_b + eta_b * kappa_b + gamma_u * kappa_b 
+                PI_t <- PI_u + PI_w + PI_v 
+                Sigma_u <- kappa_u + gamma_u + eta_b + eta_u 
+                Sigma_t <- kappa_b + kappa_u + gamma_b + gamma_u + eta_b + eta_u 
+                fit$prop <- c(PI_u, PI_w, PI_v)/PI_t * 100
+                names(fit$prop) <- c("P_u", "P_w", "P_v")
+                bioIndex <- fit$index
+            }
+            bioNames <- c(".", "tau_u->v", "tau_v->u", "tau_u->w", "tau_w->u", "tau_w->v", 
+                          "tau_v->w")
+            fit$bioTimes <- 1/fit$par[bioIndex]
+            names(fit$bioTimes) <- bioNames[bioIndex]
+            fit$AIC <- AIC(fit)
+            fit
+        }
+
+        ###########################################################################################
+        summary.FRAPFit <- function(fit){
+            #--- modified from sunmmary.nls
+            r <- as.vector(fit$residuals)
+            w <- fit$F 
+            n <- if (!is.null(w)) 
+                sum(w > 0)
+            else length(r)
+            param <- fit$par[fit$index]
+            pnames <- names(param)
+            p <- length(param)
+            rdf <- n - p
+            resvar <- if (rdf <= 0) 
+                NaN
+            else deviance(fit$nls)/rdf
+            XtXinv <- chol2inv(fit$nls$m$Rmat())
+            dimnames(XtXinv) <- list(pnames, pnames)
+            se <- sqrt(diag(XtXinv) * resvar)    
+            tval <- param/se
+            param <- cbind(param, se, tval, 2 * pt(abs(tval), rdf, lower.tail = FALSE))
+            dimnames(param) <- list(pnames, c("Estimate", "Std. Error", 
+                                              "t value", "Pr(>|t|)"))
+            ans <- list(residuals = r, sigma = sqrt(resvar), 
+                        df = c(p, rdf), cov.unscaled = XtXinv, coefficients = param, parameters = param,
+                        prop = fit$prop, times = fit$bioTimes, model = fit$model, 
+                        dataname = fit$data$name)
+            #--- end modified from sunmmary.nls
+            class(ans) <- "summary.FRAPFit"
+            ans
+        }
+
+        ###########################################################################################
+        print.summary.FRAPFit <- function(x, digits = max(3L, getOption("digits") - 3L), 
+                                          signif.stars = getOption("show.signif.stars"), ...){
+            #--- modified from print.sunmmary.nls
+            cat(paste("\nFitting model ", x$model, " to histone H1 FRAP data (", x$dataname, 
+                      ")\n", sep = ""))
+            df <- x$df
+            rdf <- df[2L]
+            cat("\nParameters:\n")
+            printCoefmat(x$coefficients, digits = digits, signif.stars = signif.stars, 
+                         ...)
+            cat("\nProportions:\n")
+            x$prop[] <- paste(round(x$prop, digits = 1), "%", sep="")
+            print(x$pro)
+            cat("\nAverage transition times:\n")
+            print(x$times)
+            cat("\n")
+            invisible(x)
+            #--- end modified from print.sunmmary.nls
+        }
+
+        ###########################################################################################
+        Fit2HistoneH1Data <- function(fit, data, ...){
+            par0 = unname(fit$par0)
+            fit$par[] <- par0
+            if (fit$model == "M0D" || fit$model == "M0"){
+                names(fit$par0) <- c("D", "kappa_b", "kappa_u")
+                names(fit$par) <- c("D", "kappa_b", "kappa_u")
+            } else {
+                names(fit$par0) <- c("D", "kappa_b", "kappa_u", "gamma_b", "gamma_u", "eta_b",
+                                    "eta_u")
+                names(fit$par) <- c("D", "kappa_b", "kappa_u", "gamma_b", "gamma_u", "eta_b",
+                                    "eta_u")
+            }
+            if (fit$model == "M0D"){
+                out <- nls( F ~ RecoFunc2Pop(data, c(D, kb, ku) ), 
+                            data = data,
+                            start = c( D=par0[1], kb=par0[2], ku=par0[3] ), 
+                            control = nls.control(warnOnly=TRUE, minFactor=0.0001, tol=1e-06),
+                            algorithm = "port",
+                            lower = rep(0, 3),
+                            upper = rep(5, 3), 
+                            ... )
+            } else if (fit$model == "M0"){
+                out <- nls( F ~ RecoFunc2Pop(data, c(par0[1], kb, ku) ), 
+                            data = data,
+                            start = c( kb=par0[2], ku=par0[3] ), 
+                            control = nls.control(warnOnly=TRUE, minFactor=0.0001, tol=1e-06),
+                            algorithm = "port",
+                            lower = rep(0, 2),
+                            upper = rep(5, 2), 
+                            ... )
+            } else if (fit$model == "M1"){
+                out <- nls( F ~ RecoFunc3Pop(data, c(par0[1], kb, ku, gb, gu, eb, eu) ), 
+                            data = data,
+                            start = c( kb=par0[2], ku=par0[3], gb=par0[4], gu=par0[5], eb=par0[6], eu=par0[7] ), 
+                            control = nls.control(warnOnly=TRUE, minFactor=0.0001, tol=1e-06),
+                            algorithm = "port",
+                            lower = rep(0, 6),
+                            upper = rep(5, 6), 
+                            ... )
+            } else if (fit$model == "M2"){
+                out <- nls( F ~ RecoFunc3Pop(data, c(par0[1], 0.0, ku, gb, gu, eb, eu) ), 
+                            data = data,
+                            start = c( ku=par0[3], gb=par0[4], gu=par0[5], eb=par0[6], eu=par0[7] ), 
+                            control = nls.control(warnOnly=TRUE, minFactor=0.0001, tol=1e-06),
+                            algorithm = "port",
+                            lower = rep(0, 5),
+                            upper = rep(5, 5), 
+                            ... )
+            } else if (fit$model == "M3"){
+                out <- nls( F ~ RecoFunc3Pop(data, c(par0[1], kb, 0.0, gb, gu, eb, eu) ), 
+                            data = data,
+                            start = c( kb=par0[2], gb=par0[4], gu=par0[5], eb=par0[6], eu=par0[7] ), 
+                            control = nls.control(warnOnly=TRUE, minFactor=0.0001, tol=1e-06),
+                            algorithm = "port",
+                            lower = rep(0, 5),
+                            upper = rep(5, 5), 
+                            ... )
+            } else if (fit$model == "M4"){
+                out <- nls( F ~ RecoFunc3Pop(data, c(par0[1], kb, ku, gb, gu, 0.0, eu) ), 
+                            data = data,
+                            start = c( kb=par0[2], ku=par0[3], gb=par0[4], gu=par0[5], eu=par0[7] ), 
+                            control = nls.control(warnOnly=TRUE, minFactor=0.0001, tol=1e-06),
+                            algorithm = "port",
+                            lower = rep(0, 5),
+                            upper = rep(5, 5), 
+                            ... )
+            } else if (fit$model == "M5"){
+                out <- nls( F ~ RecoFunc3Pop(data, c(par0[1], kb, ku, gb, gu, eb, 0.0) ), 
+                            data = data,
+                            start = c( kb=par0[2], ku=par0[3], gb=par0[4], gu=par0[5], eb=par0[6] ), 
+                            control = nls.control(warnOnly=TRUE, minFactor=0.0001, tol=1e-06),
+                            algorithm = "port",
+                            lower = rep(0, 5),
+                            upper = rep(5, 5), 
+                            ... )
+            } else if (fit$model == "M6"){
+                out <- nls( F ~ RecoFunc3Pop(data, c(par0[1], 0.0, 0.0, gb, gu, eb, eu) ), 
+                            data = data,
+                            start = c( gb=par0[4], gu=par0[5], eb=par0[6], eu=par0[7] ), 
+                            control = nls.control(warnOnly=TRUE, minFactor=0.0001, tol=1e-06),
+                            algorithm = "port",
+                            lower = rep(0, 4),
+                            upper = rep(5, 4), 
+                            ... )
+            } else if (fit$model == "M7"){
+                out <- nls( F ~ RecoFunc3Pop(data, c(par0[1], kb, ku, gb, gu, 0.0, 0.0) ), 
+                            data = data,
+                            start = c( kb=par0[2], ku=par0[3], gb=par0[4], gu=par0[5] ), 
+                            control = nls.control(warnOnly=TRUE, minFactor=0.0001, tol=1e-06),
+                            algorithm = "port",
+                            lower = rep(0, 4),
+                            upper = rep(5, 4), 
+                            ... )
+            } else if (fit$model == "M8"){
+                out <- nls( F ~ RecoFunc3Pop(data, c(par0[1], kb, 0.0, gb, gu, 0.0, eu) ), 
+                            data = data,
+                            start = c( kb=par0[2], gb=par0[4], gu=par0[5], eu=par0[7] ), 
+                            control = nls.control(warnOnly=TRUE, minFactor=0.0001, tol=1e-06),
+                            algorithm = "port",
+                            lower = rep(0, 4),
+                            upper = rep(5, 4), 
+                            ... )
+            } else if (fit$model == "M9"){
+                out <- nls( F ~ RecoFunc3Pop(data, c(par0[1], 0.0, ku, gb, gu, eb, 0.0) ), 
+                            data = data,
+                            start = c( ku=par0[3], gb=par0[4], gu=par0[5], eb=par0[6] ), 
+                            control = nls.control(warnOnly=TRUE, minFactor=0.0001, tol=1e-06),
+                            algorithm = "port",
+                            lower = rep(0, 4),
+                            upper = rep(5, 4), 
+                            ... )
+            }
+            fit$par[fit$index] <- coef(out)
+            if (fit$model == "M0D" || fit$model == "M0"){
+                fit$F <- RecoFunc2Pop(data, unname(fit$par))
+            } else {
+                fit$F <- RecoFunc3Pop(data, unname(fit$par))
+            }
+            fit$nls <- out
+            fit$residuals <- fit$data$F - fit$F
+            fit
+        }
+
+        ################################################################################
+        # Function to evaluate (model) usage RecoFun*Pop( DATA, parametersToFit , termsinSeries)
+        RecoFunc2Pop <- function( data, par, N = 100 )
+        {  
+            r1 <- data$r1
+            twoh <- data$twoh
+            t <- data$t
+            
+            L <- twoh / ( 1 - r1 ) 
+            c <- L / 2
+            h <- twoh / 2
+            
+            D <- par[1]
+            kappa_b <- par[2]
+            kappa_u <- par[3]
+            
+            kappaub = kappa_b + kappa_u
+            
+            s = 0
+            
+            for( n in 1:N ){
+                DnpiL = D * ( n * pi / L ) ** 2
+                S = ( sin( n * pi * ( c - h ) / L ) - sin( n * pi * ( c + h ) / L ) ) / ( n * pi )
+                Q = sqrt( ( kappaub + DnpiL ) ^ 2 - 4 * kappa_u * DnpiL )
+                r1 = - ( kappaub + DnpiL - Q ) / 2
+                r2 = - ( kappaub + DnpiL + Q ) / 2
+                F1 = ( r1 + kappaub ) / Q
+                F2 = - ( r2 + kappaub ) / Q 
+                B1 = kappaub + r1 + DnpiL
+                B2 = kappaub + r2 + DnpiL
+                s = s + ( B1 * F1 * exp( r1 * t ) + B2 * F2 * exp( r2 * t ) ) * S ^ 2
+            }
+            
+            return(1 - ( L ^ 2 ) / ( h * ( L - 2 * h ) * ( kappaub ) ) * s)
+        }
+
+
+        ################################################################################
+        RecoFunc3Pop <- function( data, par, N = 100 )
+        {
+            r1 <- data$r1
+            twoh <- data$twoh
+            t <- data$t
+            
+            L <- twoh / ( 1 - r1 ) 
+            c <- L / 2 
+            h <- twoh / 2 
+            
+            D <- par[ 1 ] 
+            kappa_b <- par[ 2 ] 
+            kappa_u <- par[ 3 ] 
+            gamma_b <- par[ 4 ] 
+            gamma_u <- par[ 5 ] 
+            eta_b <- par[ 6 ] 
+            eta_u <- par[ 7 ]  
+                
+            PI_u <- kappa_u * eta_b + kappa_u * gamma_u + eta_u * gamma_u 
+            PI_w <- gamma_b * kappa_u + gamma_b * eta_u + kappa_b * eta_u 
+            PI_v <- eta_b * gamma_b + eta_b * kappa_b + gamma_u * kappa_b 
+            PI_t <- PI_u + PI_w + PI_v 
+            Sigma_u <- kappa_u + gamma_u + eta_b + eta_u 
+            Sigma_t <- kappa_b + kappa_u + gamma_b + gamma_u + eta_b + eta_u 
+
+            rho <- function( s ) s ^ 2 + Sigma_t * s + PI_t
+          
+            F <- 1 
+            for ( n in 1 : N )
+            {
+                DnpiL <- D * ( n * pi / L ) ^ 2 
+                S <- ( sin( n * pi * ( c - h ) / L ) - sin( n * pi * ( c + h ) / L ) ) / ( n * pi ) 
+                z <- Roots3deg( PI_u , PI_t , Sigma_u , Sigma_t , DnpiL )  
+                r <- ( S * L ) ^ 2 * rho( z ) / ( PI_t * ( L - 2 * h) * h ) 
+                A <- CoefLaplace( z , r ) 
+                F <- F - ( ( PI_t + Sigma_u * DnpiL ) * LaplaceInv( t , z , A ) + 
+                               ( Sigma_t + DnpiL ) * LaplaceInvD1( t , z , A ) + LaplaceInvD2( t , z , A) ) 
+            }
+            return( F )
+        }
+
+
+        ################################################################################
+        LaplaceInv <- function( t, z, A )
+        {
+            if (is.complex( z[ 1 ] ) )
+            {
+                s <- Re( z[ 1 ] ) 
+                w <- Im( z[ 1 ] ) 
+                a <- abs( A[ 1 ] ) 
+                c <- Arg( A[ 1 ] ) 
+                L <- 2 * a * exp( s * t ) * cos( w * t + c ) + A[ 3 ] * exp( z[ 3 ] * t ) 
+            }
+            else
+            {
+                L <- A[ 1 ] * exp( z[ 1 ] * t ) + A[ 2 ] * exp( z[ 2 ] * t ) + A[ 3 ] * exp( z[ 3 ] * t ) 
+            }
+            return( L )
+        }
+
+        LaplaceInvD1 <- function( t, z, A )
+        {
+            if (is.complex( z[ 1 ] ) )
+            {
+                s <- Re( z[ 1 ] ) 
+                w <- Im( z[ 1 ] ) 
+                a <- abs( A[ 1 ] ) 
+                c <- Arg( A[ 1 ] ) 
+                L <- 2 * a * exp( s * t ) * ( s * cos( w * t + c ) - w * sin( w * t + c ) ) + z[ 3 ] * A[ 3 ] * exp( z[ 3 ] * t ) 
+            }
+            else
+            {
+                L <- z[ 1 ] * A[ 1 ] * exp( z[ 1 ] * t ) + z[ 2 ] * A[ 2 ] * exp( z[ 2 ] * t ) + z[ 3 ] * A[ 3 ] * exp( z[ 3 ] * t )
+            }
+            return( L )
+        }
+
+        ################################################################################
+        LaplaceInvD2 <- function( t, z, A )
+        {
+            if (is.complex( z[ 1 ] ) )
+            {
+                s <- Re( z[ 1 ] ) 
+                w <- Im( z[ 1 ] ) 
+                a <- abs( A[ 1 ] ) 
+                c <- Arg( A[ 1 ] ) 
+                L <- 2 * a * exp( s * t ) * ( ( s ^ 2 - w ^ 2 ) * cos( w * t + c ) - 2 * s * w * sin( w * t + c ) ) +
+                    z[ 3 ] ^ 2 * A[ 3 ] * exp( z[ 3 ] * t ) 
+            }
+            else
+            {
+                L <- z[ 1 ] ^ 2 * A[ 1 ] * exp( z[ 1 ] * t ) + z[ 2 ] ^ 2 * A[ 2 ] * exp( z[ 2 ] * t ) +
+                    z[ 3 ] ^ 2 * A[ 3 ] * exp( z[ 3 ] * t )
+            }
+            return( L )
+        }
+
+        ################################################################################
+        CoefLaplace <- function( z, r )
+        {
+            A1 <- r[ 1 ] / ( ( z[ 1 ] - z[ 2 ] ) * ( z[ 1 ] - z[ 3 ] ) )   
+            A2 <- r[ 2 ] / ( ( z[ 2 ] - z[ 1 ] ) * ( z[ 2 ] - z[ 3 ] ) )   
+            A3 <- r[ 3 ] / ( ( z[ 3 ] - z[ 1 ] ) * ( z[ 3 ] - z[ 2 ] ) ) 
+            return( c( A1, A2, A3 ) )
+        }
+
+        ################################################################################
+        Roots3deg <- function( PI_u, PI_t, Sigma_u, Sigma_t, DnpiL )
+        {
+            z <- polyroot( c( PI_u * DnpiL,  PI_t + Sigma_u * DnpiL, Sigma_t + DnpiL, 1 ) )
+        #     if ( abs( Im( z[ 3 ] ) ) > 1e-10 ){
+        #         t = z[ 1 ]
+        #         z[ 1 ] = z[ 3 ]
+        #         z[ 3 ] = Re(t)
+        #     }
+        #     else{
+                z = Re(z)
+        #     }
+        #     print(z)
+        #   SOLVE THIS PROBLEM!!!!!!!!!!!!!!!!!!!
+            return( z )
+        }"""
+    r.eval( r_code )
+    return()
+    
+def RCode_ExtractNumType1( r_out ):
+    """
+                          ku                   gb                   gu                   eb 
+        0.007951590967304195 0.397360540573454712 0.049732996664474942 0.004532525632578296
+    """
+    line = r_out.splitlines()
+    line = line[ len(line)-1 ]
+    line = line.split()
+    return( map( RDF, line ) )
+    
+def RCode_ExtractNumType2( r_out ):
+    """
+        [1] 0
+    """
+    line = r_out.splitlines()
+    line = line[ len(line)-1 ]
+    line = line.split()[1]
+    return( map( RDF, line ) )
+    
+
+def RCode_Data(t, F, pars):
+    r_code = r"""
+        DATA = list()
+        DATA$t = c{t_val}
+        DATA$F = c{F_val}
+        DATA$r1 = {r1_val} 
+        DATA$twoh = {twoh_val}
+        """
+    r_code = r_code.format(t_val = t, F_val = F, r1_val = pars['theta'][0], twoh_val = pars['theta'][1])
+    r.eval( r_code )
+    return()
+
+def RCode_Fit( model, pars ):
+    fit_hat = dict()
+    if model == 'Model 0 with D':
+        r_code=r"""
+        fit <- nls( F ~ RecoFunc2Pop(DATA, c(D, kb, ku), {N_val} ), 
+                    data = DATA,
+                    start = c( D={D_val}, kb={kb_val}, ku={ku_val} ),
+                    control = nls.control(warnOnly=TRUE, minFactor=0.0001, tol=1e-06),
+                    algorithm="port",
+                    lower = rep(0,3),
+                    upper = rep(5,3))
+        summary( fit )            
+        """
+        r_code = r_code.format( D_val=pars['init'][0], kb_val=pars['init'][1], ku_val=pars['init'][2], N_val=pars['theta'][2])
+    elif model == 'Model 0':
+        r_code=r"""
+        fit <- nls( F ~ RecoFunc2Pop(DATA, c({D_val}, kb, ku), {N_val} ), 
+                    data = DATA,
+                    start = c( kb={kb_val}, ku={ku_val} ),
+                    control = nls.control(warnOnly=TRUE,minFactor=0.0001, tol=1e-06),
+                    algorithm="port",
+                    lower = rep(0,2),
+                    upper = rep(5,2))
+        summary( fit )            
+        """
+        r_code = r_code.format( D_val=pars['D'][0], kb_val=pars['init'][0], ku_val=pars['init'][1], N_val=pars['theta'][2])
+    elif model == 'Model 6':
+        r_code=r"""
+        fit <- nls( F ~ RecoFunc3Pop(DATA, c({D_val}, {kb_val}, {ku_val}, gb, gu, eb, eu), {N_val} ), 
+                    data = DATA,
+                    start = c( gb={gb_val}, gu={gu_val}, eb={eb_val}, eu={eu_val} ),
+                    control = nls.control(warnOnly=TRUE, minFactor=0.0001, tol=1e-06),
+                    algorithm="port",
+                    lower = rep(0,4),
+                    upper = rep(5,4))
+        summary( fit )            
+        """
+        r_code = r_code.format( D_val=pars['D'][0], kb_val=pars['init'][0], ku_val=pars['init'][1], gb_val=pars['init'][2], gu_val=pars['init'][3], eb_val=pars['init'][4], eu_val=pars['init'][5], N_val=pars['theta'][2])
+    elif model == 'Model 9':
+        r_code=r"""
+        fit <- nls( F ~ RecoFunc3Pop(DATA, c({D_val}, {kb_val}, ku, gb, gu, eb, {eu_val}), {N_val} ), 
+                    data = DATA,
+                    start = c( ku={ku_val}, gb={gb_val}, gu={gu_val}, eb={eb_val} ), 
+                    control = nls.control(warnOnly=TRUE, minFactor=0.0001, tol=1e-06),
+                    algorithm="port",
+                    lower = rep(0,4),
+                    upper = rep(5,4))
+        summary( fit )            
+        """
+        r_code = r_code.format(D_val=pars['D'][0], kb_val=pars['init'][0], ku_val=pars['init'][1], gb_val=pars['init'][2], gu_val=pars['init'][3], eb_val=pars['init'][4], eu_val=pars['init'][5], N_val=pars['theta'][2])
+    r_out = r.eval(r_code)
+    fit_hat[ 'badconv' ] = vector( ZZ, RCode_ExtractNumType2( r.eval("print(fit$convergence)") ) )
+    if fit_hat[ 'badconv' ]:
+        raise RuntimeError("R.nls fitting failed")
+    fit_hat[ 'coeffic' ] = RCode_ExtractNumType1( r.eval("print(coef(fit))") )
+    fit_hat[ 'std-err' ] = RCode_ExtractNumType1( r.eval("print(summary(fit)$parameters[,2])") )
+    fit_hat[ 'p-value' ] = RCode_ExtractNumType1( r.eval("print(summary(fit)$parameters[,4])") )
+    return( fit_hat )
+
+def MakeFitTable( pars ):
+    s="""<center><table border="1">
+        <tr> <td>Parameter</td><td>Estimate</td><td>Avg. time</td><td>Str. err</td><td>$P$-value</td> </tr>"""
+    for ix in range(len(pars['names'])):
+        s+="""<tr> <td>$"""+pars['latex'][ix]+"""$</td>
+            <td>$"""+latex(pars['estim'][pars['index'][ix]])+"""$</td>
+            <td>$"""+latex(1/pars['estim'][pars['index'][ix]].n(prec=22))+"""~sec.$</td>
+            <td>$"""+latex(pars['stder'][ix])+"""$</td>
+            <td>$"""+latex(pars['p-val'][ix])+"""$</td> </tr>"""
+    s+="""</table></center>"""
+    return( s )
+
+def int_recovery(
+             fit_bool = Button( default = False , value = True , text = "Fit model to data with given initial parameters", label = "" ),
+             ):
+    gr = point( zip(t, F), ymin=0, ymax=1, color='green', legend_label='Data', size = 60)
+    gr += line([(0, 1), (max(t), 1)], alpha = 0.4, color = 'blue', thickness = 2, linestyle = "dashed")
+    tvar = var( 'tvar' )
+    if model == 'Model 0 with D':
+        gr_ = plot( RecoFunc2Pop( tvar, pars['init'], pars['theta']), (tvar, 0, max(t)), legend_label='Fit (initial parameters)', thickness = 5.0) 
+    elif model == 'Model 0':
+        gr_ = plot( RecoFunc2Pop( tvar, pars['D']+pars['init'], pars['theta']), (tvar, 0, max(t)), legend_label='Fit (initial parameters)', thickness = 5.0) 
+    elif model in ['Model 6', 'Model 7', 'Model 8', 'Model 9']: 
+        gr_ = plot( RecoFunc3Pop( tvar, pars['D']+pars['init'], pars['theta']), (tvar, 0, max(t)), legend_label='Fit (initial parameters)', thickness = 5.0) 
+    if not fit_bool :
+        gr += gr_
+    if fit_bool :
+        try:
+            #Fit model to data
+            # Call of R codes to fit using nls
+            RCode_Funcs() #define functions in R
+            RCode_Data(t, F, pars) #store data in R
+            fit_hat = RCode_Fit( model, pars ) #fit model to data for given initial parameters
+            if fit_hat['badconv']:  
+                html("<center><font size=5>Singular or false convergence, try different initial parameters or another model (<strong>do not use these results for inference</strong>)</font></center>")
+            else:
+                if model == 'Model 0 with D':
+                    pars['estim'] = fit_hat['coeffic'][0:2+1]
+                elif model == 'Model 0':
+                    pars['estim'] = [pars['D'][0]] + fit_hat['coeffic'][0:1+1]
+                elif model == 'Model 6':
+                    pars['estim'] = [pars['D'][0]] + [0, 0] + fit_hat['coeffic'][0:3+1]
+                elif model == 'Model 9':
+                    pars['estim'] = [pars['D'][0]] + [0] + fit_hat['coeffic'][0:3+1] + [0]
+                pars['stder'] = fit_hat['std-err']
+                pars['p-val'] = fit_hat['p-value']
+                html(MakeFitTable(pars))
+            if model in ['Model 0 with D', 'Model 0']:
+                gr += plot( RecoFunc2Pop(tvar, pars['estim'], pars['theta']), (tvar, 0, max(t)), legend_label='Fit', thickness = 5.0)  
+            elif model in ['Model 1', 'Model 2', 'Model 3', 'Model 4', 'Model 5', 'Model 6', 'Model 7', 'Model 8', 'Model 9']: 
+                gr += plot( RecoFunc3Pop(tvar, pars['estim'], pars['theta']), (tvar, 0, max(t)), legend_label='Fit', thickness = 5.0)
+        except:
+            print "Unexpected error"
+         
+    gr.axes_labels( ['$t$ time (sec.)', '$F(t)$ Fluorescence recovery'] )
+    gr.set_legend_options( loc=4, borderaxespad=2 )
+    gr.show()
+    gr.save('FRAPFit.pdf')
+  
+
+
+# GUI
+import StringIO
+import csv
+
+@interact()
+def int_model(
+              data = input_box( default=CSVdata, width=20, height=10, type=str, label="FRAP data" ),
+              model_ = selector( values = ['Model 0 with D', 'Model 0', 'Model 6', 'Model 9'], label = "Model", default = 'Model 9', buttons = True ),
+              #model_ = selector( values = ['Model 0 with D', 'Model 0', 'Model 6', 'Model 7', 'Model 8', 'Model 9'], label = "Model", default = 'Model 0 with D', buttons = True ), # if want to use models 7 and 8
+              ratio = InputBox( label='Ratio $r$', default=0.719724956298514, width=30 ),
+              h = InputBox( label='$h$', default=1.25, width=10 ),
+              N = InputBox( label='$N$', default=100, width=10 )
+              ):
+              
+    global model, t, F
+    model = model_
+    input_file = StringIO.StringIO( data.strip() )    
+    data = csv.reader(input_file)
+    t = []
+    F = []
+    for row in data:
+        try:
+           temp=map(RDF, row)
+           t.append(temp[0])
+           F.append(temp[1])
+        except ValueError:
+            continue
+    t = tuple(t)
+    F = tuple(F)
+    if model == 'Model 0 with D':
+        @interact()
+        def int_pars(
+                     D = ContinuousSlider( interval=(0, 0.1), default = 0.071, stepsize=0.0001, label="$D$", display_value=True ),
+                     kappa_b = ContinuousSlider( interval=(0, 0.1), default = 0.0054, stepsize=0.0001, label="$\kappa_b$", display_value=True ),
+                     kappa_u = ContinuousSlider( interval=(0, 0.1), default = 0.0184, stepsize=0.0001, label="$\kappa_u$", display_value=True )
+                     ):
+            global pars
+            twoh = 2*h
+            var( [ 'D_hat', 'kappa_b_hat', 'kappa_u_hat' ] )
+            pars = {
+                    'names': [ 'D', 'kappa_b', 'kappa_u' ],
+                    'latex': [ 'D', '\kappa_b', '\kappa_u' ],
+                    'init': [ D, kappa_b, kappa_u, ],
+                    'vars': [ D_hat, kappa_b_hat, kappa_u_hat ],
+                    'theta': [ RR(ratio), 2*RR(h), ZZ(N) ],
+                    'args': [ D_hat, kappa_b_hat, kappa_u_hat ],
+                    'index': [ 0, 1, 2 ]
+                    }
+            interact( int_recovery )
+    elif model == 'Model 0':
+        @interact()
+        def int_pars(
+                     kappa_b = ContinuousSlider( interval=(0, 0.5), default = 0.079, stepsize=0.001, label="$\kappa_b$", display_value=True ),
+                     kappa_u = ContinuousSlider( interval=(0, 0.5), default = 0.012, stepsize=0.001, label="$\kappa_u$", display_value=True ),
+                     D = InputBox( label='$D$', default=25, width=10 )
+                     ):
+            global pars
+            twoh = 2*h
+            var( [ 'kappa_b_hat', 'kappa_u_hat' ] )
+            pars = {
+                    'names': [ 'kappa_b', 'kappa_u' ],
+                    'latex': [ '\kappa_b', '\kappa_u' ],
+                    'init': [ kappa_b, kappa_u ],
+                    'vars': [ kappa_b_hat, kappa_u_hat ],
+                    'theta': [ RR(ratio), 2*RR(h), ZZ(N) ],
+                    'D': [ RR(D) ],
+                    'args': [ RR(D), kappa_b_hat, kappa_u_hat ],
+                    'index': [ 1, 2 ]
+                    }
+            interact( int_recovery )
+    elif model == 'Model 6':
+        @interact()
+        def int_pars( 
+                     gamma_b = ContinuousSlider( interval=(0, 0.5), default = 0.3989, stepsize=0.001, label="$\gamma_b$", display_value=True ),
+                     gamma_u = ContinuousSlider( interval=(0, 0.5), default = 0.0498, stepsize=0.001, label="$\gamma_u$", display_value=True ),
+                     eta_b = ContinuousSlider( interval=(0, 0.1), default = 0.0038, stepsize=0.001, label="$\eta_b$", display_value=True ),
+                     eta_u = ContinuousSlider( interval=(0, 0.1), default = 0.0087, stepsize=0.001, label="$\eta_u$", display_value=True ),
+                     D = InputBox( label='$D$', default=25, width=10 )
+                     ):
+            global pars
+            twoh = 2*h
+            var( [ 'gamma_b_hat', 'gamma_u_hat', 'eta_b_hat', 'eta_u_hat' ] )
+            pars = {
+                    'names': [ 'gamma_b', 'gamma_u', 'eta_b', 'eta_u' ],
+                    'latex': [ '\gamma_b', '\gamma_u', '\eta_b', '\eta_u' ],
+                    'init': [ 0, 0, gamma_b, gamma_u, eta_b, eta_u ],
+                    'vars': [ gamma_b_hat, gamma_u_hat, eta_b_hat, eta_u_hat ],
+                    'theta': [ RR(ratio), 2*RR(h), ZZ(N) ],
+                    'D': [ RR(D) ],
+                    'args': [ RR(D), 0, 0, gamma_b_hat, gamma_u_hat, eta_b_hat, eta_u_hat ],
+                    'index': [ 3, 4, 5, 6 ]
+                    }
+            interact( int_recovery )
+    elif model == 'Model 9':
+        @interact()
+        def int_pars(
+                     kappa_u = ContinuousSlider( interval=(0, 0.1), default = 0.0072, stepsize=0.001, label="$\kappa_u$", display_value=True ),
+                     gamma_b = ContinuousSlider( interval=(0, 0.5), default = 0.3831, stepsize=0.001, label="$\gamma_b$", display_value=True ),
+                     gamma_u = ContinuousSlider( interval=(0, 0.5), default = 0.0441, stepsize=0.001, label="$\gamma_u$", display_value=True ),
+                     eta_b = ContinuousSlider( interval=(0, 0.1), default = 0.0045, stepsize=0.001, label="$\eta_b$", display_value=True ),
+                     D = InputBox( label='$D$', default=25, width=10 )
+                     ):
+            global pars
+            var( [ 'kappa_u_hat', 'gamma_b_hat', 'gamma_u_hat', 'eta_b_hat' ] )
+            pars = {
+                    'names': [ 'kappa_u', 'gamma_b', 'gamma_u', 'eta_b' ],
+                    'latex': [ '\kappa_u', '\gamma_b', '\gamma_u', '\eta_b' ],
+                    'init': [ 0, kappa_u, gamma_b, gamma_u, eta_b, 0 ],
+                    'vars': [ kappa_u_hat, gamma_b_hat, gamma_u_hat, eta_b_hat ],
+                    'theta': [ RR(ratio), 2*RR(h), ZZ(N) ],
+                    'D': [ RR(D) ],
+                    'args': [ RR(D), 0, kappa_u_hat, gamma_b_hat, gamma_u_hat, eta_b_hat, 0 ],
+                    'index': [ 2, 3, 4, 5 ]
+                    } 
+            interact( int_recovery )
+    </script></div>
+    <div>
+        <center><img src="figures/model0.png" width="20%">  <img src="figures/model6.png" width="20%"><img src="figures/model9.png" width="20%"></center> <font size="5"><br>
+        <center><img src="figures/geometry.svg" height="20%" width="20%"></center> <font size="5"><br>
+        Legend for cell configuration. Ratio $r$ is defined as
+        $r=\frac{F_a}{F_0}$ where $F_0$ and $F_a$ is the fluorescence
+        intensity before and after photobleaching, respectively.</font>
+    </div>
+    
+  </body>
+</html>
