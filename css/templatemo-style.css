@@ -182,7 +182,7 @@ body {
 }
 
 a {
-  color: #ee703e;
+  color: #607a8f;
   -webkit-transition: all 150ms ease-in-out;
   -moz-transition: all 150ms ease-in-out;
   -ms-transition: all 150ms ease-in-out;
@@ -274,8 +274,8 @@ hr {
   width: 17%;
   height: 100%;
   position: fixed;
-  background-color: #364645;
-  color: white;
+  background-color: whitesmoke;
+  color: black;
   overflow-y: hidden;
 }
 @media screen and (max-width: 1290px) {
@@ -294,7 +294,7 @@ hr {
   height: 150px;
   border: 4px solid #9b9b9d;
   -webkit-border-radius: 75px;
-  border-radius: 25px;
+  border-radius: 50%;
   overflow: hidden;
   margin-bottom: 20px;
 }
@@ -304,7 +304,7 @@ hr {
 
 h3.profile-title {
   margin-bottom: 5px;
-  color: white;
+  color: black;
   font-size: 18px;
   font-family: 'robotobold';
 }
@@ -318,7 +318,7 @@ h3.profile-title {
 .main-navigation li a {
   padding: 15px 40px;
   display: block;
-  color: white;
+  color: black;
   font-size: 14px;
 }
 .main-navigation li a i {
@@ -326,7 +326,7 @@ h3.profile-title {
   font-size: 24px;
 }
 .main-navigation li a:hover {
-  background: #ee703e;
+  background: #9b9b9d;
 }
 .main-navigation li a.active {
   background: #9b9b9d;
@@ -345,14 +345,14 @@ h3.profile-title {
 }
 .social-icons a {
   font-size: 18px;
-  color: white;
+  color: black;
 }
 .social-icons a:hover {
   color: #282e35;
 }
 
 .responsive-header {
-  background: #364645;
+  background: white;
   text-align: center;
 }
 @media screen and (max-width: 992px) {
@@ -406,7 +406,7 @@ h3.profile-title {
   display: block;
   padding: 20px;
   margin-top: 30px;
-  background: #97c1e3;
+  background: #9b9b9d;
   color: white;
   font-size: 18px;
 }
