@@ -174,7 +174,7 @@ textarea {
  2. Basic Style
 -------------------------------------------------------- */
 body {
-  font-size: 14px;
+  font-size: 16px;
   line-height: 24px;
   color: #777777;
   font-family: 'robotoregular';
@@ -190,12 +190,17 @@ a {
   transition: all 150ms ease-in-out;
   text-decoration: none !important;
 }
+
 a:hover {
   color: #555555;
 }
 
-h1, h2, h3, h4, h5 {
+h1, h2, h3, h4 {
   color: #555555;
+}
+
+h5 {
+  color: white;
 }
 
 ::-webkit-input-placeholder {
@@ -244,9 +249,8 @@ h1, h2, h3, h4, h5 {
 }
 
 h4.widget-title {
-  font-size: 16px;
+  font-size: 18px;
   font-family: 'robotobold';
-  text-transform: uppercase;
   margin-bottom: 30px;
   margin-top: 30px;
 }
@@ -305,8 +309,14 @@ hr {
 h3.profile-title {
   margin-bottom: 5px;
   color: black;
-  font-size: 18px;
+  font-size: 28px;
   font-family: 'robotobold';
+}
+
+p.profile-description {
+  margin-bottom: 5px;
+  color: black;
+  font-size: 16px;
 }
 
 .main-navigation {
@@ -319,7 +329,7 @@ h3.profile-title {
   padding: 15px 40px;
   display: block;
   color: black;
-  font-size: 14px;
+  font-size: 18px;
 }
 .main-navigation li a i {
   margin-right: 15px;
@@ -451,6 +461,7 @@ h3.profile-title {
 .welcome-text h5 {
   font-size: 22px;
   color: white;
+
 }
 
 /*------ about us ------ */
