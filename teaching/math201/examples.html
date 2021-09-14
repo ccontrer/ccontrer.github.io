@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<!-- Histon H1 fitting-inference
+Carlos Contrerascarlos.contreras@ualberta.ca
+--><html>
+<head>
+	<meta content="text/html; charset=utf-8" http-equiv="content-type">
+	<meta name="viewport" content="width=device-width">
+	<link rel="stylesheet" href="../../css/templatemo-style.css">
+	<title>MATH 201 Differential Equations examples</title>
+	<script src="https://sagecell.sagemath.org/static/jquery.min.js"></script>
+	<script src="https://sagecell.sagemath.org/static/embedded_sagecell.js"></script>
+	<script>$(function () {
+	// Make the div with id 'mycell' a Sage cell
+	sagecell.makeSagecell({inputLocation:  '#mycell',
+						template:       sagecell.templates.minimal,
+						evalButtonText: 'Click here to run'});
+	// Make *any* div with class 'compute' a Sage cell
+	sagecell.makeSagecell({inputLocation: 'div.compute',
+						template:       sagecell.templates.minimal,
+						evalButtonText: 'Evaluate'});
+	});
+	</script>
+    <script type="text/javascript">
+		   onload = function(){
+			    document.getElementById("lastModified").innerHTML = "Page last modified " + document.lastModified.split(" ")[0];
+	      }
+     </script>
+	<script>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        
+        ga('create', 'UA-62761679-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+</head>
+<body style="  width: 1100px; margin-left: auto; margin-right:auto">
+    <h3><a href="../../math201.html"><< go back</a></h3>
+	<h1 style="text-align: center;"> <br>
+	MATH 201 - Differential equations<br>
+	</h1>
+	<h2 style="text-align: center;"> <br>
+	Examples<br>
+	</h2>
+	<hr>
+	<div>
+        <h2>Logistic function</h2>
+        <p>The <a href="http://en.wikipedia.org/wiki/Logistic_function#Applications" target="_blank">logistic growth</a> function models the population size under 
+        space or capacity limitations. <a href="http://onlinelibrary.wiley.com/doi/10.1002/btpr.154/abstract" target="_blank">For example</a>, 
+        <a href="http://en.wikipedia.org/wiki/Cell_culture" target="_blank">cell culture</a> in a Petri dish. The differential equation to model such growth
+        (first introduced by Pierre François Verhulst in 1838) is given by</p>
+        <p style="text-align: center">$\dfrac{dP(t)}{dt}=r\left(1-\dfrac{P}{K}\right)P, \quad P(0)=P_0.$</p><p></p>
+        <p>where</p>
+        <li>$r$: growth rate.</li>
+        <li>$K$: maximum carrying capacity.</li>
+        <li>$P_0$: initial population size.</li>
+        <p>The solution to this differential equation can be expressed in the form</p>
+        <p style="text-align: center">$P(t)=\dfrac{KP_0 e^{rt}}{K+ P_0(e^{rt}-1)}$.</p>
+        <p>Note that </p>
+        <p style="text-align: center">$$\lim_{t\rightarrow \infty} P(t)=K,$$</p>
+        <p>and if $P_0=K$ then the solution is constant $P(t)=K$. This means that the solution will be increasing or decreasing if the initial 
+        condition $P_0$ is smaller or greater that the carrying capacity $K$, respectively.</p>
+        <p><strong>Run the program to observe the solution with different values of parameters.</strong></p>
+        <li>How the solution changes if we increasing or decrease the growth rate $r$?</li>
+        <li>What is the new long term behaviour is we change the carrying capacity $K$?</li>
+        <li>What happens if we change the initial population size to be bigger than the carrying capacity ($P_0>K$)? What does it mean in biological terms?</li>
+	</div>
+	<div id="mycell">
+        <script type="text/x-sage">
+import StringIO
+
+var('t')
+global first, P01, K1, r1
+
+def _logistic(t, P0, K, r):
+    if (abs(P0 - K)<1e-10):
+        return K
+    return K * P0 * exp( r*t ) / (K + P0 * (exp(r*t) - 1))
+
+def _plot_logistic(P0, K, r, tmax, alpha):    
+    return plot(_logistic(t, P0, K, r), 0, tmax, color='green', thickness=3, alpha=alpha)
+
+def _maximum_time(P0, K, r):
+    epsilon = 0.001
+    if (abs(P0 - K)<1e-10):
+        return 0
+    if (K > P0): 
+        tmax = - 1 / r * log(epsilon * (K - P0) / (P0 * (K - epsilon)))
+    else:
+        tmax = - 1 / r * log(- epsilon * (K - P0) / (P0 * (K + epsilon)))
+    return tmax
+        
+P01 = 1.0
+K1 = 10
+r1 = 0.6
+
+first = 1
+
+@interact
+def _(K = ContinuousSlider( interval=(0, 100), default = K1, stepsize=0.1, label="$K$", display_value=True ),
+      r = ContinuousSlider( interval=(0, 2), default = r1, stepsize=0.01, label="$r$", display_value=True ),
+      P0 = InputBox( label='$P_0$', default=P01, width=10 )):
+    global first, P01, K1, r1
+    P0 = RR(P0)
+    tmax = max([_maximum_time(P0, K, r), _maximum_time(P01, K1, r1)])
+    pt = line([(0,K), (tmax,K)], linestyle='--', color='red', thickness=1, legend_label='Carrying capacity')
+    pt += point((0, P0), color='red', pointsize=50)
+    pt += plot(_logistic(t, P0, K, r), 0, tmax, color='green', thickness=3, alpha=1.0, legend_label='Solution')
+    if (first == 0):
+        pt += plot(_logistic(t, P01, K1, r1), 0, tmax, color='green', thickness=3, alpha=0.3, legend_label='Previous solution')
+    pt.axes_labels(['time', '$P(t)$'])
+    pt.set_legend_options( loc=4, borderaxespad=2 )
+    P01 = P0
+    K1 = K
+    r1 = r
+    first = 0
+    show(pt, xmin = 0, ymin = 0)
+    
+	    </script>
+	</div>
+	<hr>
+	<div>
+	</div>
+      <div class="row" id="footer">
+        <div class="col-md-12 text-center">
+          <p class="copyright-text">Copyright 2015 Carlos Contreras.
+          <p class="copyright-text"><span id="lastModified"></span> </p>
+        </div>
+      </div>
+	<script src="js/vendor/jquery-1.10.2.min.js"></script>
+	<script src="js/min/plugins.min.js"></script>
+	<script src="js/min/main.min.js"></script>
+</body>
+</html>
